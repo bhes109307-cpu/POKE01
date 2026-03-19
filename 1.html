@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PokeBattle: 回合制對戰</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .hp-bar { transition: width 0.5s ease-in-out; }
+        .shake { animation: shake 0.5s; }
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white font-sans min-h-screen p-4 flex flex-col items-center">
+
+    <div class="w-full max-w-4xl bg-slate-800 rounded-3xl p-6 shadow-2xl border-4 border-slate-700">
+        <div class="flex justify-between mb-8">
+            <div class="w-5/12">
+                <div class="flex justify-between mb-1 text-sm font-bold">
+                    <span id="p-name" class="text-blue-400">玩家</span>
+                    <span>HP: <span id="p-hp-text">0/0</span></span>
+                </div>
+                <div class="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                    <div id="p-hp-bar" class="hp-bar h-full bg-green-500 w-full"></div>
+                </div>
+            </div>
+            <div class="text-2xl font-black italic text-slate-600">VS</div>
+            <div class="w-5/12 text-right">
+                <div class="flex justify-between mb-1 text-sm font-bold">
+                    <span id="c-hp-text">0/0</span>
+                    <span id="c-name" class="text-red-400">CPU</span>
+                </div>
+                <div class="w-full bg-gray-700 h-4 rounded-full overflow-hidden">
+                    <div id="c-hp-bar" class="hp-bar h-full bg-green-500 w-full"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-around items-center h-48 mb-8">
+            <img id="p-img" src="" class="h-full object-contain drop-shadow-lg">
+            <img id="c-img" src="" class="h-full object-contain drop-shadow-lg">
+        </div>
+
+        <div id="log" class="bg-black/50 p-4 h-24 overflow-y-auto rounded-lg mb-6 text-sm text-yellow-200 border border-slate-600">
+            歡迎來到寶可夢對戰！點擊按鈕開始。
+        </div>
+
+        <div id="move-container" class="grid grid-cols-2 gap-4 hidden">
+            </div>
+
+        <button id="start-btn" onclick="initGame()" class="w-full py-4 bg-yellow-500 hover:bg-yellow-400 text-slate-900 font-black rounded-xl text-xl shadow-lg transition-transform active:scale-95">
+            尋找對手並開始！
+        </button>
+    </div>
+
+    <script>
+        let pData, cData;
+        let isPlayerTurn = true;
+
+        async function getPokemonData() {
+            const id = Math.floor(Math.random() * 800) + 1;
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+            const data = await res.json();
+            
+            // 隨機選取 4 個招式
+            const moves = data.moves.sort(() => 0.5 - Math.random()).slice(0, 4);
+            const moveDetails = await Promise.all(moves.map(m => fetch(m.move.url).then(r => r.json())));
+
+            return {
+                name: data.name.toUpperCase(),
+                img: data.sprites.other['official-artwork'].front_default,
+                hp: data.stats[0].base_stat * 2,
+                maxHp: data.stats[0].base_stat * 2,
+                atk: data.stats[1].base_stat,
+                moves: moveDetails.map(m => ({
+                    name: m.name,
+                    power: m.power || 40 // 若沒威力給預設值
+                }))
+            };
+        }
+
+        async function initGame() {
+            document.getElementById('start-btn').classList.add('hidden');
+            addLog("正在召喚寶可夢...");
+            
+            [pData, cData] = await Promise.all([getPokemonData(), getPokemonData()]);
+
+            updateUI();
+            renderMoves();
+            document.getElementById('move-container').classList.remove('hidden');
+            addLog(`野生的 ${cData.name} 出現了！`);
+        }
+
+        function updateUI() {
+            document.getElementById('p-name').innerText = pData.name;
+            document.getElementById('p-img').src = pData.img;
+            document.getElementById('p-hp-text').innerText = `${pData.hp}/${pData.maxHp}`;
+            document.getElementById('p-hp-bar').style.width = (pData.hp / pData.maxHp * 100) + '%';
+
+            document.getElementById('c-name').innerText = cData.name;
+            document.getElementById('c-img').src = cData.img;
+            document.getElementById('c-hp-text').innerText = `${cData.hp}/${cData.maxHp}`;
+            document.getElementById('c-hp-bar').style.width = (cData.hp / cData.maxHp * 100) + '%';
+        }
+
+        function renderMoves() {
+            const container = document.getElementById('move-container');
+            container.innerHTML = '';
+            pData.moves.forEach(move => {
+                const btn = document.createElement('button');
+                btn.className = "bg-slate-700 hover:bg-blue-600 p-3 rounded-lg border-b-4 border-slate-900 active:border-b-0 transition-all font-bold uppercase text-xs";
+                btn.innerText = move.name.replace('-', ' ');
+                btn.onclick = () => playerAttack(move);
+                container.appendChild(btn);
+            });
+        }
+
+        function addLog(msg) {
+            const log = document.getElementById('log');
+            log.innerHTML += `<div>> ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        async function playerAttack(move) {
+            if (!isPlayerTurn) return;
+            isPlayerTurn = false;
+
+            // 攻擊動畫 (震動 CPU)
+            document.getElementById('c-img').classList.add('shake');
+            setTimeout(() => document.getElementById('c-img').classList.remove('shake'), 500);
+
+            let dmg = Math.floor((move.power / 100) * pData.atk);
+            cData.hp = Math.max(0, cData.hp - dmg);
+            addLog(`${pData.name} 使用了 ${move.name.toUpperCase()}，造成 ${dmg} 傷害！`);
+            updateUI();
+
+            if (cData.hp <= 0) return endGame("勝利！");
+
+            setTimeout(cpuTurn, 1000);
+        }
+
+        function cpuTurn() {
+            const move = cData.moves[Math.floor(Math.random() * 4)];
+            
+            document.getElementById('p-img').classList.add('shake');
+            setTimeout(() => document.getElementById('p-img').classList.remove('shake'), 500);
+
+            let dmg = Math.floor((move.power / 100) * cData.atk);
+            pData.hp = Math.max(0, pData.hp - dmg);
+            addLog(`${cData.name} 反擊使用了 ${move.name.toUpperCase()}，造成 ${dmg} 傷害！`);
+            updateUI();
+
+            if (pData.hp <= 0) return endGame("被擊敗了...");
+            isPlayerTurn = true;
+        }
+
+        function endGame(result) {
+            addLog(`遊戲結束：你 ${result}`);
+            document.getElementById('move-container').classList.add('hidden');
+            const startBtn = document.getElementById('start-btn');
+            startBtn.classList.remove('hidden');
+            startBtn.innerText = "再戰一場！";
+        }
+    </script>
+</body>
+</html>
