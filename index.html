@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Poke 3D Master - 全國圖鑑版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root { --card-width: 220px; --card-height: 320px; }
+        body { background: #0f172a; overflow-x: hidden; touch-action: pan-y; user-select: none; }
+        
+        /* 3D 旋轉舞台 */
+        .stage-3d {
+            perspective: 1200px;
+            transform-style: preserve-3d;
+            height: 450px;
+        }
+        #carousel {
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out;
+            width: var(--card-width);
+        }
+        .pokemon-card-3d {
+            position: absolute;
+            width: var(--card-width);
+            height: var(--card-height);
+            backface-visibility: hidden;
+        }
+
+        /* 響應式微調 */
+        @media (max-width: 768px) {
+            .stage-3d { transform: scale(0.7); margin-top: -50px; }
+            .battle-grid { display: flex; flex-direction: column; }
+            .order-cpu { order: 1; }
+            .order-log { order: 2; }
+            .order-player { order: 3; }
+        }
+
+        /* 捲軸美化 */
+        #battle-log::-webkit-scrollbar { width: 4px; }
+        #battle-log::-webkit-scrollbar-thumb { background: #475569; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-white font-sans">
+
+    <div id="loader" class="fixed inset-0 z-50 bg-slate-900 flex flex-col items-center justify-center">
+        <div class="animate-spin rounded-full h-16 w-16 border-t-4 border-yellow-500 mb-4"></div>
+        <p id="loader-text" class="text-xl font-bold italic">正在連接 PokeAPI GraphQL...</p>
+    </div>
+
+    <main class="container mx-auto px-4 py-8">
+        <section id="select-phase" class="flex flex-col items-center">
+            <h1 class="text-3xl font-black text-yellow-400 mb-10 tracking-widest">SELECT YOUR POKÉMON</h1>
+            
+            <div class="stage-3d w-full flex justify-center items-center mb-10">
+                <div id="carousel" class="relative flex justify-center items-center">
+                    </div>
+            </div>
+
+            <div class="flex gap-4">
+                <button id="draw-btn" class="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-full font-black shadow-lg transition-all active:scale-95 disabled:opacity-50">
+                    抽取 5 張 (屬性不重複)
+                </button>
+            </div>
+            <p class="mt-4 text-slate-400 text-sm">💡 滑鼠拖拽或手指滑動可旋轉 3D 卡牌</p>
+        </section>
+
+        <section id="battle-phase" class="hidden w-full max-w-6xl mx-auto">
+            <div class="battle-grid grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                
+                <div class="order-player flex flex-col items-center p-4 bg-slate-800 rounded-2xl border-2 border-blue-500/50">
+                    <span class="text-blue-400 font-bold mb-2">PLAYER</span>
+                    <div id="player-slot"></div>
+                </div>
+
+                <div class="order-log flex flex-col h-[400px]">
+                    <div class="bg-black border-2 border-slate-700 rounded-t-xl p-2 text-center text-xs text-slate-500 uppercase tracking-widest">Battle Log</div>
+                    <div id="battle-log" class="flex-grow bg-black p-4 font-mono text-green-400 text-sm overflow-y-auto border-x-2 border-slate-700">
+                        </div>
+                    <button id="start-battle-btn" class="bg-yellow-500 text-black font-black p-4 rounded-b-xl hover:bg-yellow-400 active:scale-95 transition-all">
+                        開始戰鬥！
+                    </button>
+                </div>
+
+                <div class="order-cpu flex flex-col items-center p-4 bg-slate-800 rounded-2xl border-2 border-red-500/50">
+                    <span class="text-red-400 font-bold mb-2">OPPONENT</span>
+                    <div id="cpu-slot"></div>
+                </div>
+
+            </div>
+            
+            <div class="mt-8 text-center">
+                <button onclick="location.reload()" class="text-slate-500 underline hover:text-white">回首頁</button>
+            </div>
+        </section>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>
