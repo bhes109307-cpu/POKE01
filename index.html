@@ -4,6 +4,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Poke 3D Master - 全國圖鑑版</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ef4444">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         :root { --card-width: 220px; --card-height: 320px; }
@@ -51,12 +58,9 @@
     <main class="container mx-auto px-4 py-8">
         <section id="select-phase" class="flex flex-col items-center">
             <h1 class="text-3xl font-black text-yellow-400 mb-10 tracking-widest">SELECT YOUR POKÉMON</h1>
-            
             <div class="stage-3d w-full flex justify-center items-center mb-10">
-                <div id="carousel" class="relative flex justify-center items-center">
-                    </div>
+                <div id="carousel" class="relative flex justify-center items-center"></div>
             </div>
-
             <div class="flex gap-4">
                 <button id="draw-btn" class="bg-red-600 hover:bg-red-500 px-8 py-3 rounded-full font-black shadow-lg transition-all active:scale-95 disabled:opacity-50">
                     抽取 5 張 (屬性不重複)
@@ -67,7 +71,6 @@
 
         <section id="battle-phase" class="hidden w-full max-w-6xl mx-auto">
             <div class="battle-grid grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
-                
                 <div class="order-player flex flex-col items-center p-4 bg-slate-800 rounded-2xl border-2 border-blue-500/50">
                     <span class="text-blue-400 font-bold mb-2">PLAYER</span>
                     <div id="player-slot"></div>
@@ -75,20 +78,15 @@
 
                 <div class="order-log flex flex-col h-[400px]">
                     <div class="bg-black border-2 border-slate-700 rounded-t-xl p-2 text-center text-xs text-slate-500 uppercase tracking-widest">Battle Log</div>
-                    <div id="battle-log" class="flex-grow bg-black p-4 font-mono text-green-400 text-sm overflow-y-auto border-x-2 border-slate-700">
-                        </div>
-                    <button id="start-battle-btn" class="bg-yellow-500 text-black font-black p-4 rounded-b-xl hover:bg-yellow-400 active:scale-95 transition-all">
-                        開始戰鬥！
-                    </button>
+                    <div id="battle-log" class="flex-grow bg-black p-4 font-mono text-green-400 text-sm overflow-y-auto border-x-2 border-slate-700"></div>
+                    <button id="start-battle-btn" class="bg-yellow-500 text-black font-black p-4 rounded-b-xl hover:bg-yellow-400 active:scale-95 transition-all">開始戰鬥！</button>
                 </div>
 
                 <div class="order-cpu flex flex-col items-center p-4 bg-slate-800 rounded-2xl border-2 border-red-500/50">
                     <span class="text-red-400 font-bold mb-2">OPPONENT</span>
                     <div id="cpu-slot"></div>
                 </div>
-
             </div>
-            
             <div class="mt-8 text-center">
                 <button onclick="location.reload()" class="text-slate-500 underline hover:text-white">回首頁</button>
             </div>
@@ -96,5 +94,15 @@
     </main>
 
     <script src="app.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('PWA Service Worker 註冊成功'))
+                    .catch(err => console.error('PWA 註冊失敗:', err));
+            });
+        }
+    </script>
 </body>
 </html>
